@@ -103,7 +103,7 @@ jobs:
 
     - name: Trigger Cloudflare Pages deploy
       if: steps.publish.outputs.pushed == 'true'
-      run: gh workflow run deploy_cloudflare_pages.yml --ref page
+      run: gh workflow run deploy_cloudflare_pages.yml --ref main
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
