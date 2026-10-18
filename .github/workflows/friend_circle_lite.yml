@@ -82,6 +82,7 @@ jobs:
         cp -r main ./static/edgeone.json ./static/_headers ./static/index.html ./static/readme.md ./static/favicon.ico ./static/bg-light.webp ./static/bg-dark.webp all.json link.json errors.json pages/
 
     - name: Publish static assets to branches
+      id: publish
       run: |
         published_tree=""
         if git fetch origin "${PAGE_BRANCH}:refs/remotes/origin/${PAGE_BRANCH}"; then
@@ -93,10 +94,18 @@ jobs:
         generated_tree=$(git write-tree)
         if [ -n "$published_tree" ] && [ "$generated_tree" = "$published_tree" ]; then
           echo "No static asset changes; skipping page branch update."
+          echo "pushed=false" >> "$GITHUB_OUTPUT"
           exit 0
         fi
         git commit -m "⏱️ $(date +"%Y年%m月%d日-%H时%M分") GitHub Actions定时更新"
         git push --force https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:${{ env.PAGE_BRANCH }}
+        echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+    - name: Trigger Cloudflare Pages deploy
+      if: steps.publish.outputs.pushed == 'true'
+      run: gh workflow run deploy_cloudflare_pages.yml --ref page
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Delete Workflow Runs
       uses: Mattraks/delete-workflow-runs@v2
